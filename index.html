@@ -18,7 +18,7 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f1f5f9;
+            background-color: #ef4444; /* Troja-Ljungby Red */
         }
     </style>
 </head>
@@ -44,25 +44,34 @@
             const [pubOpenTime, setPubOpenTime] = useState(2);
             const [arenaOpenTime, setArenaOpenTime] = useState(90);
             const [visitors, setVisitors] = useState('');
-            const [riskLevel, setRiskLevel] = useState('');
+            const [riskLevel, setRiskLevel] = useState('1'); // Default to level 1
             const [eventDescription, setEventDescription] = useState('');
             const [riskAssessment, setRiskAssessment] = useState('');
             const [specificAction, setSpecificAction] = useState('');
             const [kiosks, setKiosks] = useState('');
-            const [numSecurityGuards, setNumSecurityGuards] = useState('');
-            const [numCrowdHosts, setNumCrowdHosts] = useState('');
-            const [numOfficials, setNumOfficials] = useState('');
+            const [numSecurityGuards, setNumSecurityGuards] = useState(4); // Default to 4
+            const [numCrowdHosts, setNumCrowdHosts] = useState(15); // Default to 15
             const [contacts, setContacts] = useState('');
+            const [responsible, setResponsible] = useState('Patrik Svensson');
             
             // Tillstånd för utdata och meddelanden
             const [generatedHtml, setGeneratedHtml] = useState(null);
             const [message, setMessage] = useState('');
         
+            const riskLevels = {
+                '1': 'Nivå 1 - Normal Risk',
+                '2': 'Nivå 2 - Förhöjd Risk',
+                '3': 'Nivå 3 - Hög Risk',
+                '4': 'Nivå 4 - Mycket Hög Risk'
+            };
+
+            const responsibleOptions = ['Patrik Svensson', 'Mikael Andersson'];
+        
             const securityPlanTemplate = (data) => `
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-8">
                         <div class="flex-1"></div>
-                        <img src="https://placehold.co/150x50/345248/ffffff?text=DIN+LOGOTYP" alt="Klubblogo" class="h-12 w-auto mx-auto">
+                        <img src="https://placehold.co/150x50/B91C1C/ffffff?text=TROJA-LJUNGBY" alt="Klubblogo" class="h-12 w-auto mx-auto">
                         <div class="flex-1 text-right text-sm text-gray-500">${data.date}</div>
                     </div>
                     <h1 class="text-2xl font-bold mb-2">Säkerhetsplan för matchen i Hockeyallsvenskan</h1>
@@ -100,7 +109,7 @@
                         </ul>
         
                         <h3 class="font-bold text-gray-800 pt-4">Riskbedömning denna match</h3>
-                        <p>Denna match mot ${data.opponent} är klassad som en match med ${data.riskLevel} risk. ${data.riskAssessment} Med det i åtanke ${data.specificAction}.</p>
+                        <p>Denna match mot ${data.opponent} är klassad som en match med **${data.riskLevelText}** risk. ${data.riskAssessment} Med det i åtanke ${data.specificAction}.</p>
         
                         <h3 class="font-bold text-gray-800 pt-4">Entréer och kapacitet</h3>
                         <p>Vi kommer att ha följande entréer öppna: Huvudentrén, Restaurang (endast för gäster som bokat bord), Bortastå (Kapacitet enligt överenskommelse med gästande lag), Hemmastå (Kapacitet enligt överenskommelse). Utökat arenaområde tillämpas för visitation.</p>
@@ -111,11 +120,11 @@
                         <div class="whitespace-pre-line">${data.kiosks}</div>
         
                         <h3 class="font-bold text-gray-800 pt-4">Bemanning</h3>
-                        <p>Denna match mot ${data.opponent} klassificeras som en match med ${data.riskLevel} risk. Vi bemannar med ${data.numSecurityGuards} ordningsvakter, ca. ${data.numCrowdHosts} utbildade publikvärdar samt ca. ${data.numOfficials} funktionärer som sköter scanning av biljetter etc.</p>
+                        <p>Denna match mot ${data.opponent} klassificeras som en match med **${data.riskLevelText}** risk. Vi bemannar med ${data.numSecurityGuards} ordningsvakter, ca. ${data.numCrowdHosts} utbildade publikvärdar.</p>
         
                         <div class="mt-8 pt-4 border-t border-gray-200">
                             <p class="text-xs text-gray-500">Ljungby, dag som ovan.</p>
-                            <p class="mt-2 text-sm font-semibold">${data.responsibleName}, Säkerhetsansvarig IF Troja-Ljungby.</p>
+                            <p class="mt-2 text-sm font-semibold">${data.responsible}, Säkerhetsansvarig IF Troja-Ljungby.</p>
                         </div>
                     </div>
                 </div>
@@ -129,148 +138,115 @@
                 const pubOpenCalculated = new Date(puckDropDate.getTime() - (pubOpenTime * 60 * 60 * 1000)).toLocaleTimeString('sv-SE', {hour: '2-digit', minute: '2-digit'});
                 const arenaOpenCalculated = new Date(puckDropDate.getTime() - (arenaOpenTime * 60 * 1000)).toLocaleTimeString('sv-SE', {hour: '2-digit', minute: '2-digit'});
         
-                const responsibleName = contacts.split('\n')[0].split(',')[0].replace('Säkerhetsansvarig IF Troja-Ljungby: ', '');
-        
                 const data = {
                     date, weekday: weekdayValue, opponent, puckDropTime, pubOpenTime, arenaOpenTime, visitors,
-                    eventDescription, riskLevel, riskAssessment, specificAction, kiosks,
-                    numSecurityGuards, numCrowdHosts, numOfficials, contacts,
-                    pubOpenCalculated, arenaOpenCalculated, responsibleName
+                    riskLevel, riskAssessment, specificAction, kiosks,
+                    numSecurityGuards, numCrowdHosts, contacts, responsible,
+                    pubOpenCalculated, arenaOpenCalculated,
+                    riskLevelText: riskLevels[riskLevel]
                 };
         
                 setGeneratedHtml(securityPlanTemplate(data));
             };
         
-            const handleCopy = () => {
-                const textToCopy = document.getElementById('output').innerText;
-                const tempTextarea = document.createElement('textarea');
-                tempTextarea.value = textToCopy;
-                document.body.appendChild(tempTextarea);
-                tempTextarea.select();
-                try {
-                    document.execCommand('copy');
-                    setMessage('Texten har kopierats!');
-                    setTimeout(() => setMessage(''), 3000);
-                } catch (err) {
-                    console.error('Kopiering misslyckades: ', err);
-                }
-                document.body.removeChild(tempTextarea);
-            };
-        
-            const handlePdfDownload = () => {
-                if (window.jspdf && window.html2canvas) {
-                    const { jsPDF } = window.jspdf;
-                    const pageContent = document.getElementById('output');
-                    const scale = 2;
-        
-                    window.html2canvas(pageContent, {
-                        scale: scale,
-                        logging: true,
-                        useCORS: true,
-                        scrollY: -window.scrollY
-                    }).then(canvas => {
-                        const imgData = canvas.toDataURL('image/png');
-                        const doc = new jsPDF('p', 'mm', 'a4');
-                        const imgProps = doc.getImageProperties(imgData);
-                        const pdfWidth = doc.internal.pageSize.getWidth();
-                        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-                        doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                        doc.save(`sakerhetsplan-${date}.pdf`);
-                    }).catch(err => {
-                        console.error('Fel vid PDF-generering:', err);
-                    });
-                } else {
-                    console.error('jspdf or html2canvas libraries are not loaded.');
-                }
-            };
-        
             return (
                 <div className="p-8 flex items-center justify-center min-h-screen">
                     <div className="bg-white p-8 rounded-2xl shadow-xl max-w-4xl w-full">
-                        <h1 className="text-3xl font-bold mb-6 text-center text-slate-800">Säkerhetsplan Generator</h1>
-                        <p className="text-center text-slate-600 mb-8">Fyll i informationen nedan för att generera en komplett säkerhetsplan för matchen.</p>
+                        <h1 className="text-3xl font-bold mb-6 text-center text-red-700">Säkerhetsplan Generator</h1>
+                        <p className="text-center text-gray-600 mb-8">Fyll i informationen nedan för att generera en komplett säkerhetsplan för matchen.</p>
         
                         <form id="securityPlanForm" className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label htmlFor="date" className="block text-sm font-medium text-slate-700">Datum</label>
-                                    <input type="text" id="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="2025-05-06" required />
+                                    <label htmlFor="date" className="block text-sm font-medium text-gray-700">Datum</label>
+                                    <input type="text" id="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" placeholder="2025-05-06" required />
                                 </div>
                                 <div>
-                                    <label htmlFor="weekday" className="block text-sm font-medium text-slate-700">Veckodag</label>
-                                    <input type="text" id="weekday" value={weekdayValue} onChange={(e) => setWeekdayValue(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="Lördag" required />
+                                    <label htmlFor="weekday" className="block text-sm font-medium text-gray-700">Veckodag</label>
+                                    <input type="text" id="weekday" value={weekdayValue} onChange={(e) => setWeekdayValue(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" placeholder="Lördag" required />
                                 </div>
                             </div>
         
                             <div>
-                                <label htmlFor="opponent" className="block text-sm font-medium text-slate-700">Motståndarlag</label>
-                                <input type="text" id="opponent" value={opponent} onChange={(e) => setOpponent(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="Tingsryds AIF" required />
+                                <label htmlFor="opponent" className="block text-sm font-medium text-gray-700">Motståndarlag</label>
+                                <input type="text" id="opponent" value={opponent} onChange={(e) => setOpponent(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" placeholder="Tingsryds AIF" required />
                             </div>
         
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div>
-                                    <label htmlFor="puckDropTime" className="block text-sm font-medium text-slate-700">Nedsläppstid</label>
-                                    <input type="text" id="puckDropTime" value={puckDropTime} onChange={(e) => setPuckDropTime(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="19:00" required />
+                                    <label htmlFor="puckDropTime" className="block text-sm font-medium text-gray-700">Nedsläppstid</label>
+                                    <input type="text" id="puckDropTime" value={puckDropTime} onChange={(e) => setPuckDropTime(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" placeholder="19:00" required />
                                 </div>
                                 <div>
-                                    <label htmlFor="pubOpenTime" className="block text-sm font-medium text-slate-700">Pubar/restauranger öppnar (timmarna innan)</label>
-                                    <input type="number" id="pubOpenTime" value={pubOpenTime} onChange={(e) => setPubOpenTime(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="2" required />
+                                    <label htmlFor="pubOpenTime" className="block text-sm font-medium text-gray-700">Pubar/restauranger öppnar (timmarna innan)</label>
+                                    <input type="number" id="pubOpenTime" value={pubOpenTime} onChange={(e) => setPubOpenTime(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" placeholder="2" required />
                                 </div>
                                 <div>
-                                    <label htmlFor="arenaOpenTime" className="block text-sm font-medium text-slate-700">Arena öppnar (minuter innan)</label>
-                                    <input type="number" id="arenaOpenTime" value={arenaOpenTime} onChange={(e) => setArenaOpenTime(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="90" required />
+                                    <label htmlFor="arenaOpenTime" className="block text-sm font-medium text-gray-700">Arena öppnar (minuter innan)</label>
+                                    <input type="number" id="arenaOpenTime" value={arenaOpenTime} onChange={(e) => setArenaOpenTime(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" placeholder="90" required />
                                 </div>
                             </div>
         
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label htmlFor="visitors" className="block text-sm font-medium text-slate-700">Antal besökare</label>
-                                    <input type="number" id="visitors" value={visitors} onChange={(e) => setVisitors(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="2500" required />
+                                    <label htmlFor="visitors" className="block text-sm font-medium text-gray-700">Antal besökare</label>
+                                    <input type="number" id="visitors" value={visitors} onChange={(e) => setVisitors(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" placeholder="2500" required />
                                 </div>
                                 <div>
-                                    <label htmlFor="riskLevel" className="block text-sm font-medium text-slate-700">Risknivå (t.ex. medel, hög, låg)</label>
-                                    <input type="text" id="riskLevel" value={riskLevel} onChange={(e) => setRiskLevel(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="medel" required />
+                                    <label htmlFor="riskLevel" className="block text-sm font-medium text-gray-700">Risknivå</label>
+                                    <select id="riskLevel" value={riskLevel} onChange={(e) => setRiskLevel(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" required>
+                                        {Object.keys(riskLevels).map(level => (
+                                            <option key={level} value={level}>{riskLevels[level]}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
         
                             <div>
-                                <label htmlFor="eventDescription" className="block text-sm font-medium text-slate-700">Evenemangsbeskrivning (frivillig)</label>
-                                <textarea id="eventDescription" rows="3" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="Beskriv om det finns några evenemang eller speciella gäster i samband med matchen."></textarea>
+                                <label htmlFor="eventDescription" className="block text-sm font-medium text-gray-700">Evenemangsbeskrivning (frivillig)</label>
+                                <textarea id="eventDescription" rows="3" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" placeholder="Beskriv om det finns några evenemang eller speciella gäster i samband med matchen."></textarea>
                             </div>
                             
                             <div>
-                                <label htmlFor="riskAssessment" className="block text-sm font-medium text-slate-700">Specifik riskbedömning</label>
-                                <textarea id="riskAssessment" rows="3" value={riskAssessment} onChange={(e) => setRiskAssessment(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="Vi bedömer risken för att bengaler tänds som stor."></textarea>
+                                <label htmlFor="riskAssessment" className="block text-sm font-medium text-gray-700">Specifik riskbedömning</label>
+                                <textarea id="riskAssessment" rows="3" value={riskAssessment} onChange={(e) => setRiskAssessment(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" placeholder="Vi bedömer risken för att bengaler tänds som stor."></textarea>
                             </div>
                             
                             <div>
-                                <label htmlFor="specificAction" className="block text-sm font-medium text-slate-700">Specifik åtgärd</label>
-                                <textarea id="specificAction" rows="3" value={specificAction} onChange={(e) => setSpecificAction(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="Med det i åtanke höjer vi beredskapen för konfrontationer efter matchen."></textarea>
+                                <label htmlFor="specificAction" className="block text-sm font-medium text-gray-700">Specifik åtgärd</label>
+                                <textarea id="specificAction" rows="3" value={specificAction} onChange={(e) => setSpecificAction(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" placeholder="Med det i åtanke höjer vi beredskapen för konfrontationer efter matchen."></textarea>
                             </div>
         
                             <div>
-                                <label htmlFor="kiosks" className="block text-sm font-medium text-slate-700">Kiosker och service</label>
-                                <textarea id="kiosks" rows="3" value={kiosks} onChange={(e) => setKiosks(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="Hemmastå-kiosken: Godis, korv, läsk samt 3,5% öl."></textarea>
+                                <label htmlFor="kiosks" className="block text-sm font-medium text-gray-700">Kiosker och service</label>
+                                <textarea id="kiosks" rows="3" value={kiosks} onChange={(e) => setKiosks(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" placeholder="Hemmastå-kiosken: Godis, korv, läsk samt 3,5% öl."></textarea>
                             </div>
         
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label htmlFor="numSecurityGuards" className="block text-sm font-medium text-slate-700">Antal ordningsvakter</label>
-                                    <input type="number" id="numSecurityGuards" value={numSecurityGuards} onChange={(e) => setNumSecurityGuards(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="15" />
+                                    <label htmlFor="numSecurityGuards" className="block text-sm font-medium text-gray-700">Antal ordningsvakter</label>
+                                    <input type="number" id="numSecurityGuards" value={numSecurityGuards} onChange={(e) => setNumSecurityGuards(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" placeholder="4" />
                                 </div>
                                 <div>
-                                    <label htmlFor="numCrowdHosts" className="block text-sm font-medium text-slate-700">Antal publikvärdar</label>
-                                    <input type="number" id="numCrowdHosts" value={numCrowdHosts} onChange={(e) => setNumCrowdHosts(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="15" />
+                                    <label htmlFor="numCrowdHosts" className="block text-sm font-medium text-gray-700">Antal publikvärdar</label>
+                                    <input type="number" id="numCrowdHosts" value={numCrowdHosts} onChange={(e) => setNumCrowdHosts(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" placeholder="15" />
                                 </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label htmlFor="numOfficials" className="block text-sm font-medium text-slate-700">Antal funktionärer</label>
-                                    <input type="number" id="numOfficials" value={numOfficials} onChange={(e) => setNumOfficials(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="30" />
+                                    <label htmlFor="responsible" className="block text-sm font-medium text-gray-700">Säkerhetsansvarig</label>
+                                    <select id="responsible" value={responsible} onChange={(e) => setResponsible(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm">
+                                        {responsibleOptions.map(name => (
+                                            <option key={name} value={name}>{name}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
         
                             <div>
-                                <label htmlFor="contacts" className="block text-sm font-medium text-slate-700">Organisationskontakter (en per rad)</label>
-                                <textarea id="contacts" rows="5" value={contacts} onChange={(e) => setContacts(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="Säkerhetsansvarig IF Troja-Ljungby: ..."></textarea>
+                                <label htmlFor="contacts" className="block text-sm font-medium text-gray-700">Övriga Organisationskontakter (en per rad)</label>
+                                <textarea id="contacts" rows="5" value={contacts} onChange={(e) => setContacts(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" placeholder="Säkerhetsansvarig IF Troja-Ljungby: ..."></textarea>
                             </div>
         
                             {message && (
@@ -279,22 +255,16 @@
                                 </div>
                             )}
         
-                            <div className="mt-8 flex justify-center space-x-4">
-                                <button type="button" onClick={handleGenerate} className="px-6 py-3 bg-slate-700 text-white font-semibold rounded-full shadow-lg hover:bg-slate-600 transition-colors duration-200">
+                            <div className="mt-8 flex justify-center">
+                                <button type="button" onClick={handleGenerate} className="px-8 py-4 bg-red-700 text-white font-semibold rounded-full shadow-lg hover:bg-red-600 transition-colors duration-200">
                                     Generera Säkerhetsplan
-                                </button>
-                                <button type="button" onClick={handleCopy} className="px-6 py-3 bg-slate-700 text-white font-semibold rounded-full shadow-lg hover:bg-slate-600 transition-colors duration-200">
-                                    Kopiera Text
-                                </button>
-                                <button type="button" onClick={handlePdfDownload} className="px-6 py-3 bg-slate-700 text-white font-semibold rounded-full shadow-lg hover:bg-slate-600 transition-colors duration-200">
-                                    Ladda ner PDF
                                 </button>
                             </div>
                         </form>
         
                         {generatedHtml && (
-                            <div className="mt-10 p-8 bg-white rounded-2xl shadow-inner border border-slate-200 overflow-hidden">
-                                <div id="output" className="prose max-w-none text-slate-800" dangerouslySetInnerHTML={{ __html: generatedHtml }}></div>
+                            <div className="mt-10 p-8 bg-white rounded-2xl shadow-inner border border-gray-200 overflow-hidden">
+                                <div id="output" className="prose max-w-none text-gray-800" dangerouslySetInnerHTML={{ __html: generatedHtml }}></div>
                             </div>
                         )}
                     </div>
