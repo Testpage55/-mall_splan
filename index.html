@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Säkerhetsplan Generator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- html2canvas for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- jspdf for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f1f5f9;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        'use strict';
+
+        const { useState } = React;
+
+        const App = () => {
+            // Statiska värden för standardfält
+            const today = new Date();
+            const formattedDate = today.toLocaleDateString('sv-SE', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
+            const weekday = today.toLocaleDateString('sv-SE', { weekday: 'long' });
+        
+            // Tillstånd för formulärfälten
+            const [date, setDate] = useState(formattedDate);
+            const [weekdayValue, setWeekdayValue] = useState(weekday);
+            const [opponent, setOpponent] = useState('');
+            const [puckDropTime, setPuckDropTime] = useState('');
+            const [pubOpenTime, setPubOpenTime] = useState(2);
+            const [arenaOpenTime, setArenaOpenTime] = useState(90);
+            const [visitors, setVisitors] = useState('');
+            const [riskLevel, setRiskLevel] = useState('');
+            const [eventDescription, setEventDescription] = useState('');
+            const [riskAssessment, setRiskAssessment] = useState('');
+            const [specificAction, setSpecificAction] = useState('');
+            const [kiosks, setKiosks] = useState('');
+            const [numSecurityGuards, setNumSecurityGuards] = useState('');
+            const [numCrowdHosts, setNumCrowdHosts] = useState('');
+            const [numOfficials, setNumOfficials] = useState('');
+            const [contacts, setContacts] = useState('');
+            
+            // Tillstånd för utdata och meddelanden
+            const [generatedHtml, setGeneratedHtml] = useState(null);
+            const [message, setMessage] = useState('');
+        
+            const securityPlanTemplate = (data) => `
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-8">
+                        <div class="flex-1"></div>
+                        <img src="https://placehold.co/150x50/345248/ffffff?text=DIN+LOGOTYP" alt="Klubblogo" class="h-12 w-auto mx-auto">
+                        <div class="flex-1 text-right text-sm text-gray-500">${data.date}</div>
+                    </div>
+                    <h1 class="text-2xl font-bold mb-2">Säkerhetsplan för matchen i Hockeyallsvenskan</h1>
+                    <h2 class="text-xl font-semibold mb-6">${data.opponent}</h2>
+        
+                    <div class="space-y-4 text-sm text-gray-700">
+                        <h3 class="font-bold text-gray-800">Evenemangsbeskrivning</h3>
+                        <p>På ${data.weekday} den ${data.date} med nedsläpp kl ${data.puckDropTime} spelar IF Troja-Ljungby mot ${data.opponent} i Hockeyallsvenskan.</p>
+                        <p>Vi öppnar pubar och restauranger ${data.pubOpenTime} timmar innan nedsläpp, dvs. kl. ${data.pubOpenCalculated}. För övriga besökare öppnar vi ${data.arenaOpenTime} minuter innan nedsläpp, dvs. kl. ${data.arenaOpenCalculated}.</p>
+                        <p>SP-Arena har en total kapacitet på 3 400 besökare, varav 1 523 är sittplatser. Vi räknar med en publiksiffra på ca. ${data.visitors} personer för denna match.</p>
+                        ${data.eventDescription ? `<p class="italic">${data.eventDescription}</p>` : ''}
+                        
+                        <h3 class="font-bold text-gray-800 pt-4">Säkerhetspolicy</h3>
+                        <p>Säkerhetsarbetet bygger på trygga och säkra evenemang. Målet är att alla på arenan ska känna sig välkomna och trygga. Vårt säkerhetsarbete fokuserar på att identifiera enskilda ordningsstörningar och, om möjligt, lagföra dem.</p>
+                        <p>Innan match fokuseras arbetet på att se till att alla kommer in på arenan på ett tryggt sätt. Väl inne på arenan ska vi försöka begränsa risken för pyroteknik, olyckshändelser och ordningsstörningar. Efter matchen ser vi till att utrymningen sker säkert och lugnt och att supportergrupperna inte får möjlighet att konfronteras.</p>
+        
+                        <h3 class="font-bold text-gray-800 pt-4">Regler och allmänna riktlinjer</h3>
+                        <p>Vi kommer att se till att de ordningsregler som upprättats av Svenska Ishockeyförbundet efterlevs. Vi kommer dessutom att rätta oss efter krav på visitation och väskförbud. Allt tifomaterial kommer att kontrolleras för att inga kränkande, diskriminerande eller politiska budskap ska komma in på arenan.</p>
+                        <p>Om en person bryter mot ordningsreglerna nekas personen inträde. Sker brottet inom arenan eller det utökade arenaområdet överlämnas personen till polis för vidare åtgärd. Personer som är för berusade eller påverkade kommer att nekas tillträde.</p>
+        
+                        <h3 class="font-bold text-gray-800 pt-4">Organisationsbeskrivning</h3>
+                        <p>Vid varje match har vi en matchorganisation enligt följande:</p>
+                        <div class="whitespace-pre-line">${data.contacts}</div>
+        
+                        <h3 class="font-bold text-gray-800 pt-4">Beredskap och handlingsplan vid specifika scenarion</h3>
+                        <p>Det är omöjligt att specificera alla tänkbara scenarier, men här är de viktigaste och de med störst sannolikhet att de kan inträffa:</p>
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>Antändning av pyroteknik på läktare:</strong> Speakertext samt meddelande kommer upp på storbilden.</li>
+                            <li><strong>Kast av föremål:</strong> Domaren bryter matchen och kallar in spelarna till avbytarbåsen. Därefter speakertext och budskap på storbilden. Sedan återupptas matchen. Skulle det ske en gång till bryter domaren och spelarna lämnar isen. Ett matchmöte ska genomföras för att besluta om matchen ska fortsätta. Det är viktigt att säkerställa att ingen har skadats.</li>
+                            <li><strong>Forcering av entréer:</strong> Orsaken till detta är oftast att insläppet tar för lång tid. Primärt är det viktigt att utrustningen fungerar och att det finns en plan som kan sättas i verket så fort problem uppstår. Skulle detta ske, ska ordningsvakterna stänga grindarna om möjligt. Därefter fortsätter insläppet om situationen bedöms som lugn. Händelsen måste omedelbart rapporteras till säkerhetsansvarig som i sin tur kan stärka upp närliggande entréer.</li>
+                            <li><strong>Införsel av ovisiterade kollin:</strong> Skulle vi som arrangör upptäcka ovisiterade kollin på läktaren, kommer vi att be om att få dem överlämnade. Om detta inte är möjligt på grund av taktiskt underläge, övervakar vi situationen. Vi kan överväga att tömma sektionen och göra en ny visitering.</li>
+                            <li><strong>Öppen eld på läktare:</strong> Om det är en brand vi anser att vi klarar av att släcka själva, utrymmer vi sektionen och släcker. Vi har brandberedskap i form av sandhinkar, brandfiltar och släckare i anslutning till läktarna. Om vi bedömer att brandkår behövs, ringer säkerhetsansvarig 112. Utrymning av sektionen sker.</li>
+                            <li><strong>Stormning av isen:</strong> Detta kan ske och då försöker vi stoppa stormningen. Om det är övermäktigt fokuserar vi på att skydda spelare, domare och övrig funktionärspersonal. Om det är en enstaka individ grips och lagförs personen. Domaren håller matchen tills personen är avlägsnad. Skulle det vara en större stormning bryter domaren matchen och tar in spelarna från isen. Matchen återupptas när isen är fri från folk.</li>
+                            <li><strong>Olycksfall/Sjukdomsfall:</strong> Vi har alltid en sjukvårdsutbildad publikvärd med akutväska i tjänst. Dessutom har vi en matchläkare på plats 90 minuter innan nedsläpp. Vid ett sjukdomsfall eller olycka gör den sjukvårdande publikvärden första insatsen. Vid behov ringer säkerhetsansvarig 112 och tillkallar ambulans. Matchläkare tillkallas. Om personen kan gå för egen maskin finns ett sjukvårdsrum i spelargången. Domaren underrättas om händelsen och bedömer om matchen ska avbrytas. Stor vikt ska läggas på den sjuka/skadades integritet. Domaren gör sedan bedömningen när matchen återupptas.</li>
+                        </ul>
+        
+                        <h3 class="font-bold text-gray-800 pt-4">Riskbedömning denna match</h3>
+                        <p>Denna match mot ${data.opponent} är klassad som en match med ${data.riskLevel} risk. ${data.riskAssessment} Med det i åtanke ${data.specificAction}.</p>
+        
+                        <h3 class="font-bold text-gray-800 pt-4">Entréer och kapacitet</h3>
+                        <p>Vi kommer att ha följande entréer öppna: Huvudentrén, Restaurang (endast för gäster som bokat bord), Bortastå (Kapacitet enligt överenskommelse med gästande lag), Hemmastå (Kapacitet enligt överenskommelse). Utökat arenaområde tillämpas för visitation.</p>
+                        <p>Vid ståplatsentréerna utförs visitation av inhyrd säkerhetspersonal. Vid övriga entréer sker selektiv visitation av personal från IF Troja-Ljungby. Instruktion till samtliga entréer är 1. Biljettkontroll, 2. Visitation och 3. Scanning av biljett.</p>
+        
+                        <h3 class="font-bold text-gray-800 pt-4">Kiosker och service</h3>
+                        <p>Vi kommer att ha följande kiosker öppna:</p>
+                        <div class="whitespace-pre-line">${data.kiosks}</div>
+        
+                        <h3 class="font-bold text-gray-800 pt-4">Bemanning</h3>
+                        <p>Denna match mot ${data.opponent} klassificeras som en match med ${data.riskLevel} risk. Vi bemannar med ${data.numSecurityGuards} ordningsvakter, ca. ${data.numCrowdHosts} utbildade publikvärdar samt ca. ${data.numOfficials} funktionärer som sköter scanning av biljetter etc.</p>
+        
+                        <div class="mt-8 pt-4 border-t border-gray-200">
+                            <p class="text-xs text-gray-500">Ljungby, dag som ovan.</p>
+                            <p class="mt-2 text-sm font-semibold">${data.responsibleName}, Säkerhetsansvarig IF Troja-Ljungby.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        
+            const handleGenerate = () => {
+                const [puckDropHours, puckDropMinutes] = puckDropTime.split(':').map(Number);
+                const puckDropDate = new Date();
+                puckDropDate.setHours(puckDropHours, puckDropMinutes);
+                
+                const pubOpenCalculated = new Date(puckDropDate.getTime() - (pubOpenTime * 60 * 60 * 1000)).toLocaleTimeString('sv-SE', {hour: '2-digit', minute: '2-digit'});
+                const arenaOpenCalculated = new Date(puckDropDate.getTime() - (arenaOpenTime * 60 * 1000)).toLocaleTimeString('sv-SE', {hour: '2-digit', minute: '2-digit'});
+        
+                const responsibleName = contacts.split('\n')[0].split(',')[0].replace('Säkerhetsansvarig IF Troja-Ljungby: ', '');
+        
+                const data = {
+                    date, weekday: weekdayValue, opponent, puckDropTime, pubOpenTime, arenaOpenTime, visitors,
+                    eventDescription, riskLevel, riskAssessment, specificAction, kiosks,
+                    numSecurityGuards, numCrowdHosts, numOfficials, contacts,
+                    pubOpenCalculated, arenaOpenCalculated, responsibleName
+                };
+        
+                setGeneratedHtml(securityPlanTemplate(data));
+            };
+        
+            const handleCopy = () => {
+                const textToCopy = document.getElementById('output').innerText;
+                const tempTextarea = document.createElement('textarea');
+                tempTextarea.value = textToCopy;
+                document.body.appendChild(tempTextarea);
+                tempTextarea.select();
+                try {
+                    document.execCommand('copy');
+                    setMessage('Texten har kopierats!');
+                    setTimeout(() => setMessage(''), 3000);
+                } catch (err) {
+                    console.error('Kopiering misslyckades: ', err);
+                }
+                document.body.removeChild(tempTextarea);
+            };
+        
+            const handlePdfDownload = () => {
+                if (window.jspdf && window.html2canvas) {
+                    const { jsPDF } = window.jspdf;
+                    const pageContent = document.getElementById('output');
+                    const scale = 2;
+        
+                    window.html2canvas(pageContent, {
+                        scale: scale,
+                        logging: true,
+                        useCORS: true,
+                        scrollY: -window.scrollY
+                    }).then(canvas => {
+                        const imgData = canvas.toDataURL('image/png');
+                        const doc = new jsPDF('p', 'mm', 'a4');
+                        const imgProps = doc.getImageProperties(imgData);
+                        const pdfWidth = doc.internal.pageSize.getWidth();
+                        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                        doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                        doc.save(`sakerhetsplan-${date}.pdf`);
+                    }).catch(err => {
+                        console.error('Fel vid PDF-generering:', err);
+                    });
+                } else {
+                    console.error('jspdf or html2canvas libraries are not loaded.');
+                }
+            };
+        
+            return (
+                <div className="p-8 flex items-center justify-center min-h-screen">
+                    <div className="bg-white p-8 rounded-2xl shadow-xl max-w-4xl w-full">
+                        <h1 className="text-3xl font-bold mb-6 text-center text-slate-800">Säkerhetsplan Generator</h1>
+                        <p className="text-center text-slate-600 mb-8">Fyll i informationen nedan för att generera en komplett säkerhetsplan för matchen.</p>
+        
+                        <form id="securityPlanForm" className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label htmlFor="date" className="block text-sm font-medium text-slate-700">Datum</label>
+                                    <input type="text" id="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="2025-05-06" required />
+                                </div>
+                                <div>
+                                    <label htmlFor="weekday" className="block text-sm font-medium text-slate-700">Veckodag</label>
+                                    <input type="text" id="weekday" value={weekdayValue} onChange={(e) => setWeekdayValue(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="Lördag" required />
+                                </div>
+                            </div>
+        
+                            <div>
+                                <label htmlFor="opponent" className="block text-sm font-medium text-slate-700">Motståndarlag</label>
+                                <input type="text" id="opponent" value={opponent} onChange={(e) => setOpponent(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="Tingsryds AIF" required />
+                            </div>
+        
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label htmlFor="puckDropTime" className="block text-sm font-medium text-slate-700">Nedsläppstid</label>
+                                    <input type="text" id="puckDropTime" value={puckDropTime} onChange={(e) => setPuckDropTime(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="19:00" required />
+                                </div>
+                                <div>
+                                    <label htmlFor="pubOpenTime" className="block text-sm font-medium text-slate-700">Pubar/restauranger öppnar (timmarna innan)</label>
+                                    <input type="number" id="pubOpenTime" value={pubOpenTime} onChange={(e) => setPubOpenTime(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="2" required />
+                                </div>
+                                <div>
+                                    <label htmlFor="arenaOpenTime" className="block text-sm font-medium text-slate-700">Arena öppnar (minuter innan)</label>
+                                    <input type="number" id="arenaOpenTime" value={arenaOpenTime} onChange={(e) => setArenaOpenTime(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="90" required />
+                                </div>
+                            </div>
+        
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label htmlFor="visitors" className="block text-sm font-medium text-slate-700">Antal besökare</label>
+                                    <input type="number" id="visitors" value={visitors} onChange={(e) => setVisitors(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="2500" required />
+                                </div>
+                                <div>
+                                    <label htmlFor="riskLevel" className="block text-sm font-medium text-slate-700">Risknivå (t.ex. medel, hög, låg)</label>
+                                    <input type="text" id="riskLevel" value={riskLevel} onChange={(e) => setRiskLevel(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="medel" required />
+                                </div>
+                            </div>
+        
+                            <div>
+                                <label htmlFor="eventDescription" className="block text-sm font-medium text-slate-700">Evenemangsbeskrivning (frivillig)</label>
+                                <textarea id="eventDescription" rows="3" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="Beskriv om det finns några evenemang eller speciella gäster i samband med matchen."></textarea>
+                            </div>
+                            
+                            <div>
+                                <label htmlFor="riskAssessment" className="block text-sm font-medium text-slate-700">Specifik riskbedömning</label>
+                                <textarea id="riskAssessment" rows="3" value={riskAssessment} onChange={(e) => setRiskAssessment(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="Vi bedömer risken för att bengaler tänds som stor."></textarea>
+                            </div>
+                            
+                            <div>
+                                <label htmlFor="specificAction" className="block text-sm font-medium text-slate-700">Specifik åtgärd</label>
+                                <textarea id="specificAction" rows="3" value={specificAction} onChange={(e) => setSpecificAction(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="Med det i åtanke höjer vi beredskapen för konfrontationer efter matchen."></textarea>
+                            </div>
+        
+                            <div>
+                                <label htmlFor="kiosks" className="block text-sm font-medium text-slate-700">Kiosker och service</label>
+                                <textarea id="kiosks" rows="3" value={kiosks} onChange={(e) => setKiosks(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="Hemmastå-kiosken: Godis, korv, läsk samt 3,5% öl."></textarea>
+                            </div>
+        
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label htmlFor="numSecurityGuards" className="block text-sm font-medium text-slate-700">Antal ordningsvakter</label>
+                                    <input type="number" id="numSecurityGuards" value={numSecurityGuards} onChange={(e) => setNumSecurityGuards(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="15" />
+                                </div>
+                                <div>
+                                    <label htmlFor="numCrowdHosts" className="block text-sm font-medium text-slate-700">Antal publikvärdar</label>
+                                    <input type="number" id="numCrowdHosts" value={numCrowdHosts} onChange={(e) => setNumCrowdHosts(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="15" />
+                                </div>
+                                <div>
+                                    <label htmlFor="numOfficials" className="block text-sm font-medium text-slate-700">Antal funktionärer</label>
+                                    <input type="number" id="numOfficials" value={numOfficials} onChange={(e) => setNumOfficials(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="30" />
+                                </div>
+                            </div>
+        
+                            <div>
+                                <label htmlFor="contacts" className="block text-sm font-medium text-slate-700">Organisationskontakter (en per rad)</label>
+                                <textarea id="contacts" rows="5" value={contacts} onChange={(e) => setContacts(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 sm:text-sm" placeholder="Säkerhetsansvarig IF Troja-Ljungby: ..."></textarea>
+                            </div>
+        
+                            {message && (
+                                <div className="mt-4 text-center text-sm text-green-600 transition-opacity duration-300 ease-in-out">
+                                    {message}
+                                </div>
+                            )}
+        
+                            <div className="mt-8 flex justify-center space-x-4">
+                                <button type="button" onClick={handleGenerate} className="px-6 py-3 bg-slate-700 text-white font-semibold rounded-full shadow-lg hover:bg-slate-600 transition-colors duration-200">
+                                    Generera Säkerhetsplan
+                                </button>
+                                <button type="button" onClick={handleCopy} className="px-6 py-3 bg-slate-700 text-white font-semibold rounded-full shadow-lg hover:bg-slate-600 transition-colors duration-200">
+                                    Kopiera Text
+                                </button>
+                                <button type="button" onClick={handlePdfDownload} className="px-6 py-3 bg-slate-700 text-white font-semibold rounded-full shadow-lg hover:bg-slate-600 transition-colors duration-200">
+                                    Ladda ner PDF
+                                </button>
+                            </div>
+                        </form>
+        
+                        {generatedHtml && (
+                            <div className="mt-10 p-8 bg-white rounded-2xl shadow-inner border border-slate-200 overflow-hidden">
+                                <div id="output" className="prose max-w-none text-slate-800" dangerouslySetInnerHTML={{ __html: generatedHtml }}></div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+        
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(
+            <React.StrictMode>
+                <App />
+            </React.StrictMode>
+        );
+    </script>
+</body>
+</html>
