@@ -44,6 +44,7 @@
             const [pubOpenTime, setPubOpenTime] = useState(2);
             const [arenaOpenTime, setArenaOpenTime] = useState(90);
             const [visitors, setVisitors] = useState('');
+            const [awayVisitors, setAwayVisitors] = useState('');
             const [riskLevel, setRiskLevel] = useState('Låg (Klass 1)');
             const [eventDescription, setEventDescription] = useState('');
             const [riskAssessment, setRiskAssessment] = useState('');
@@ -54,8 +55,8 @@
             const [contacts, setContacts] = useState('');
             const [securityResponsible, setSecurityResponsible] = useState('Patrik Svensson');
             const [guardResponsible, setGuardResponsible] = useState('Mikael Andersson');
-            const [crowdHostResponsible, setCrowdHostResponsible] = useState('Annan');
-            const [mediaResponsible, setMediaResponsible] = useState('Annan');
+            const [crowdHostResponsible, setCrowdHostResponsible] = useState('Otto');
+            const [mediaResponsible, setMediaResponsible] = useState('Max');
             
             // Nya tillstånd för egna namn
             const [customSecurityResponsible, setCustomSecurityResponsible] = useState('');
@@ -85,7 +86,8 @@
         
             const securityResponsibleOptions = ['Patrik Svensson', 'Annan'];
             const guardResponsibleOptions = ['Mikael Andersson', 'Patrik Svensson', 'Gerö Matis', 'Annan'];
-            const otherResponsibleOptions = ['Annan'];
+            const crowdHostResponsibleOptions = ['Otto', 'Annan'];
+            const mediaResponsibleOptions = ['Max', 'Annan'];
             
             // Lag i Hockeyallsvenskan 2025/26
             const opponentsList = [
@@ -124,6 +126,7 @@
                         <p>På ${data.weekday} den ${data.date} med nedsläpp kl ${data.puckDropTime} spelar IF Troja-Ljungby mot ${data.opponent} i Hockeyallsvenskan.</p>
                         <p>Restaurang Slagskottet öppnar ${data.pubOpenTime} timmar innan nedsläpp, dvs. kl. ${data.pubOpenCalculated}. För övriga besökare öppnar vi ${data.arenaOpenTime} minuter innan nedsläpp, dvs. kl. ${data.arenaOpenCalculated}.</p>
                         <p>SP-Arena har en total kapacitet på 3 400 besökare, varav 1 523 är sittplatser. Vi räknar med en publiksiffra på ca. ${data.visitors} personer för denna match.</p>
+                        <p>Vi räknar med ${data.awayVisitors} personer på bortastå.</p>
                         ${data.eventDescription ? `<p class="italic">${data.eventDescription}</p>` : ''}
                         
                         <h3 class="font-bold text-gray-800 pt-4">Säkerhetspolicy</h3>
@@ -136,7 +139,12 @@
         
                         <h3 class="font-bold text-gray-800 pt-4">Organisationsbeskrivning</h3>
                         <p>Vid varje match har vi en matchorganisation enligt följande:</p>
-                        <div class="whitespace-pre-line">${data.contacts}</div>
+                        <p>
+                            <strong>Säkerhetsansvarig:</strong> ${data.securityResponsible}<br>
+                            <strong>Ordningsvaktsansvarig:</strong> ${data.guardResponsible}<br>
+                            <strong>Publikvärdsansvarig:</strong> ${data.crowdHostResponsible}<br>
+                            <strong>Medieansvarig:</strong> ${data.mediaResponsible}
+                        </p>
         
                         <h3 class="font-bold text-gray-800 pt-4">Beredskap och handlingsplan vid specifika scenarion</h3>
                         <p>Det är omöjligt att specificera alla tänkbara scenarier, men här är de viktigaste och de med störst sannolikhet att de kan inträffa:</p>
@@ -164,9 +172,14 @@
                         <h3 class="font-bold text-gray-800 pt-4">Bemanning</h3>
                         <p>Denna match mot ${data.opponent} klassificeras som en match med ${data.riskLevelText} risk. Vi bemannar med ${data.numSecurityGuards} ordningsvakter och ca. ${data.numCrowdHosts} utbildade publikvärdar. Ordningsvaktsansvarig för denna match är: ${data.guardResponsible}</p>
 
-                        <div class="mt-8 pt-4 border-t border-gray-200">
-                            <h3 class="font-bold text-gray-800 pt-4">Underskrift Säkerhetsansvarig</h3>
-                            <p class="mt-2 text-sm font-semibold">${data.securityResponsible}, Säkerhetsansvarig IF Troja-Ljungby.</p>
+                        <div class="flex items-end justify-between mt-8 pt-4 border-t border-gray-200">
+                            <div>
+                                <h3 class="font-bold text-gray-800">Underskrift Säkerhetsansvarig</h3>
+                                <p class="mt-2 text-sm">Med vänlig hälsning,</p>
+                                <p class="mt-2 text-sm font-semibold">${data.securityResponsible}</p>
+                                <p class="text-xs text-gray-500">Säkerhetsansvarig IF Troja-Ljungby</p>
+                            </div>
+                            <img src="https://placehold.co/100x100/B91C1C/ffffff?text=LOGO" alt="Troja-Ljungby Logo" class="w-20 h-20">
                         </div>
                     </div>
                 </div>
@@ -202,7 +215,7 @@
                 const arenaOpenCalculated = new Date(puckDropDate.getTime() - (arenaOpenTime * 60 * 1000)).toLocaleTimeString('sv-SE', {hour: '2-digit', minute: '2-digit'});
         
                 const data = {
-                    date, weekday: weekdayValue, opponent, puckDropTime: finalPuckDropTime, pubOpenTime, arenaOpenTime, visitors,
+                    date, weekday: weekdayValue, opponent, puckDropTime: finalPuckDropTime, pubOpenTime, arenaOpenTime, visitors, awayVisitors,
                     riskLevelText: riskLevel, riskAssessment, specificAction, kiosks: formattedKiosks,
                     numSecurityGuards, numCrowdHosts, contacts, 
                     securityResponsible: finalSecurityResponsible, 
@@ -275,9 +288,16 @@
         
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label htmlFor="visitors" className="block text-sm font-medium text-gray-700">Antal besökare</label>
+                                    <label htmlFor="visitors" className="block text-sm font-medium text-gray-700">Totala antalet besökare</label>
                                     <input type="text" id="visitors" value={visitors} onChange={(e) => setVisitors(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" placeholder="1500-2000" required />
                                 </div>
+                                <div>
+                                    <label htmlFor="awayVisitors" className="block text-sm font-medium text-gray-700">Antal personer på bortastå</label>
+                                    <input type="text" id="awayVisitors" value={awayVisitors} onChange={(e) => setAwayVisitors(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" placeholder="Ange antal" required />
+                                </div>
+                            </div>
+        
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label htmlFor="riskLevel" className="block text-sm font-medium text-gray-700">Risknivå</label>
                                     <select id="riskLevel" value={riskLevel} onChange={(e) => setRiskLevel(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" required>
@@ -287,7 +307,7 @@
                                     </select>
                                 </div>
                             </div>
-        
+
                             <div>
                                 <label htmlFor="eventDescription" className="block text-sm font-medium text-gray-700">Evenemangsbeskrivning (frivillig)</label>
                                 <textarea id="eventDescription" rows="3" value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" placeholder="Beskriv om det finns några evenemang eller speciella gäster i samband med matchen."></textarea>
@@ -357,7 +377,7 @@
                                 <div>
                                     <label htmlFor="crowdHostResponsible" className="block text-sm font-medium text-gray-700">Publikvärdsansvarig</label>
                                     <select id="crowdHostResponsible" value={crowdHostResponsible} onChange={(e) => setCrowdHostResponsible(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm">
-                                        {otherResponsibleOptions.map(name => (
+                                        {crowdHostResponsibleOptions.map(name => (
                                             <option key={name} value={name}>{name}</option>
                                         ))}
                                     </select>
@@ -374,7 +394,7 @@
                                 <div>
                                     <label htmlFor="mediaResponsible" className="block text-sm font-medium text-gray-700">Mediaansvarig</label>
                                     <select id="mediaResponsible" value={mediaResponsible} onChange={(e) => setMediaResponsible(e.target.value)} className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm">
-                                        {otherResponsibleOptions.map(name => (
+                                        {mediaResponsibleOptions.map(name => (
                                             <option key={name} value={name}>{name}</option>
                                         ))}
                                     </select>
